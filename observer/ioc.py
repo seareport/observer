@@ -59,7 +59,7 @@ def write_ioc_df(
             "_default": {
                 "type": "zstd",
                 "args": {"level": compression_level},
-            }
+            },
         },
     )
 
