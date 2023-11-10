@@ -11,6 +11,9 @@ from .azclients import get_storage_options
 from .settings import get_settings
 
 
+Credential: T.TypeAlias = azure.identity.aio.ChainedTokenCredential
+
+
 def _get_metadata_uri() -> str:
     settings = get_settings()
     uri = f"az://{settings.container_name}/ioc/metadata.parquet"
@@ -23,7 +26,7 @@ def _get_station_uri(ioc_code: str) -> str:
     return uri
 
 
-def get_ioc_metadata(credential: azure.identity.aio.ChainedTokenCredential | None = None) -> pd.DataFrame:
+def get_ioc_metadata(credential: Credential | None = None) -> pd.DataFrame:
     """
     Return the IOC metadata from Blob
     """
@@ -41,7 +44,7 @@ def write_ioc_df(
     df: pd.DataFrame,
     ioc_code: str,
     compression_level: int = 0,
-    credential: azure.identity.aio.ChainedTokenCredential | None = None,
+    credential: Credential | None = None,
 ) -> None:
     settings = get_settings()
     uri = _get_station_uri(ioc_code)
@@ -82,7 +85,7 @@ def write_ioc_df(
 
 def get_ioc_parquet_file(
     ioc_code: str,
-    credential: azure.identity.aio.ChainedTokenCredential | None = None,
+    credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
 ) -> pd.DataFrame:
     uri = _get_station_uri(ioc_code)
@@ -94,7 +97,7 @@ def get_ioc_parquet_file(
 def read_ioc_df(
     ioc_code: str,
     no_years: int = 2,
-    credential: azure.identity.aio.ChainedTokenCredential | None = None,
+    credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
 ) -> pd.DataFrame:
     pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential)
