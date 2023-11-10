@@ -45,6 +45,7 @@ def write_ioc_df(
     ioc_code: str,
     compression_level: int = 0,
     credential: Credential | None = None,
+    **kwargs: dict[str, T.Any],
 ) -> None:
     settings = get_settings()
     uri = _get_station_uri(ioc_code)
@@ -64,6 +65,7 @@ def write_ioc_df(
                 "args": {"level": compression_level},
             },
         },
+        **kwargs,
     )
 
 
@@ -100,6 +102,6 @@ def read_ioc_df(
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
 ) -> pd.DataFrame:
-    pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential)
+    pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential, **kwargs)
     df = pf[-no_years:].to_pandas(columns=pf.columns)
     return df
