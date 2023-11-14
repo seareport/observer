@@ -11,6 +11,7 @@ from .azclients import get_storage_options
 from .ioc import get_ioc_metadata
 from .ioc import get_ioc_parquet_file
 from .ioc import read_ioc_df
+from .ioc import scrape_ioc_station
 from .ioc import write_ioc_df
 from .settings import get_settings
 from .settings import Settings
@@ -28,6 +29,7 @@ __all__: list[str] = [
     "get_storage_options",
     "read_ioc_df",
     "Settings",
+    "scrape_ioc_station",
     "write_ioc_df",
     "__version__",
 ]

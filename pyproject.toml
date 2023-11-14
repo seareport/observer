@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "observer"
-version = "0.1.0"
+version = "0.0.0.post9.dev0+da4b934.dirty"
 description = ""
 authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
 readme = "README.md"
@@ -20,13 +20,17 @@ python = "^3.10"
 adlfs = "*"
 azure-identity = "*"
 azure-storage-blob = "*"
+dask = {version = "*", extras = ["complete"]}
+fastparquet = "*"
+httpx = "*"
+multifutures = "*"
 pandas = "*"
+pydantic-settings = "*"
+scipy = ">1.8"
 searvey = "*"
+tenacity = "*"
 typer = {version = "*", extras = ["all"]}
 xarray = {version = "*", extras = ["accel", "parallel", "io"]}
-pydantic-settings = "*"
-fastparquet = "*"
-dask = {version = "^2023.10.1", extras = ["complete"]}
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0"
@@ -78,7 +82,7 @@ exclude_lines = [
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = true
+enable = false
 dirty = true
 
 [tool.mypy]

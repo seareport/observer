@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import os
 import typing as T
 
 import azure.identity.aio
 import fastparquet
 import pandas as pd
 
-from .azclients import get_obs_fs
-from .azclients import get_storage_options
-from .settings import get_settings
+from observer.azclients import get_obs_fs
+from observer.azclients import get_storage_options
+from observer.settings import get_settings
 
 
 Credential: T.TypeAlias = azure.identity.aio.ChainedTokenCredential
@@ -41,8 +42,9 @@ def get_ioc_metadata(credential: Credential | None = None) -> pd.DataFrame:
 
 
 def write_ioc_df(
+    *,
     df: pd.DataFrame,
-    ioc_code: str,
+    ioc_code: str | None = None,
     compression_level: int = 0,
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
@@ -54,8 +56,7 @@ def write_ioc_df(
         df = df.assign(year=df.index.year)
     df.to_parquet(
         uri,
-        partition_cols="year",
-        # file_scheme="hive",
+        partition_cols=["year"],
         index=True,
         storage_options=storage_options,
         engine=settings.engine,
@@ -69,27 +70,11 @@ def write_ioc_df(
     )
 
 
-# def read_ioc_df(
-#     ioc_code: str,
-#     credential: azure.identity.aio.ChainedTokenCredential | None = None,
-#     **kwargs: dict[str, T.Any],
-# ) -> pd.DataFrame:
-#     settings = get_settings()
-#     storage_options = get_storage_options(credential=credential)
-#     df = pd.read_parquet(
-#         path=_get_station_uri(ioc_code),
-#         storage_options=storage_options,
-#         engine=settings.engine,
-#         **kwargs,
-#     )
-#     return df
-
-
 def get_ioc_parquet_file(
     ioc_code: str,
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
-) -> pd.DataFrame:
+) -> fastparquet.ParquetFile:
     uri = _get_station_uri(ioc_code)
     fs = get_obs_fs(credential=credential)
     pf = fastparquet.ParquetFile(uri, fs=fs, **kwargs)
