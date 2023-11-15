@@ -109,6 +109,7 @@ def scrape_ioc_station(
     # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
     urls = generate_urls(ioc_code, start_date, end_date)
     logger.debug("%s: There are %d urls", ioc_code, len(urls))
+    logger.debug("%s:\n%s", ioc_code, "\n".join(urls))
     with httpx.Client() as client:
         func_kwargs = [dict(url=url, client=client, rate_limit=rate_limit) for url in urls]
         logger.debug("%s: Starting data retrieval", ioc_code)
