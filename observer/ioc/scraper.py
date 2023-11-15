@@ -110,7 +110,8 @@ def scrape_ioc_station(
     urls = generate_urls(ioc_code, start_date, end_date)
     logger.debug("%s: There are %d urls", ioc_code, len(urls))
     logger.debug("%s:\n%s", ioc_code, "\n".join(urls))
-    with httpx.Client() as client:
+    timeout = httpx.Timeout(timeout=10, read=30)
+    with httpx.Client(timeout=timeout) as client:
         func_kwargs = [dict(url=url, client=client, rate_limit=rate_limit) for url in urls]
         logger.debug("%s: Starting data retrieval", ioc_code)
         results = multifutures.multithread(fetch_url, func_kwargs, check=True)
@@ -150,6 +151,5 @@ def scrape_ioc_station(
         df = pd.DataFrame(columns=["time", "year"])
     logger.info("%s: Finished scraping: %s - %s", ioc_code, start_date, end_date)
     return df
-
 
     return df
