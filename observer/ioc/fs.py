@@ -90,3 +90,11 @@ def read_ioc_df(
     pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential, **kwargs)
     df = pf[-no_years:].to_pandas(columns=pf.columns)
     return df
+
+
+def list_ioc_stations(
+    credential: Credential | None = None,
+) -> list[str]:
+    fs = get_obs_fs(credential=credential)
+    existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls("obs/ioc")]
+    return existing
