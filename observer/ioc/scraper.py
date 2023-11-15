@@ -73,6 +73,12 @@ def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())]
     df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime)).tz_localize("utc"))
     df = df.rename(columns={"stime": "time"})
+    # Occasionaly IOC contains complete garbage. E.g. duplicate timestamps on the same sensor. We should drop those.
+    # https://www.ioc-sealevelmonitoring.org/service.php?query=data&timestart=2022-03-12T11:03:40&timestop=2022-04-11T09:04:26&code=acnj
+    duplicated_timestamps = df[["time", "sensor"]].duplicated():
+    if duplicated_timestamps.sum() > 0:
+        df = df[~duplicated_timestamps]
+        logger.warning("Dropped duplicates: %d rows", duplicated_timestamps.sum())
     df = df.pivot(index="time", columns="sensor", values="slevel")
     df._mgr.items.name = ""
     return df
