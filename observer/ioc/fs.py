@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import logging
 import typing as T
 
 import azure.identity.aio
@@ -13,6 +13,8 @@ from observer.settings import get_settings
 
 
 Credential: T.TypeAlias = azure.identity.aio.ChainedTokenCredential
+
+logger = logging.getLogger(__name__)
 
 
 def _get_metadata_uri() -> str:
@@ -49,6 +51,7 @@ def write_ioc_df(
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
 ) -> None:
+    logger.debug("%s: Starting upload", ioc_code)
     settings = get_settings()
     uri = _get_station_uri(ioc_code)
     storage_options = get_storage_options(credential=credential)
@@ -68,6 +71,7 @@ def write_ioc_df(
         },
         **kwargs,
     )
+    logger.info("%s: Finished upload", ioc_code)
 
 
 def get_ioc_parquet_file(

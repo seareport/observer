@@ -120,23 +120,36 @@ def scrape_ioc_station(
     # Not all the urls contain data, so let's filter them out
     func_kwargs = []
     for result in results:
-        # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
-        if result.result != "[]":
-            func_kwargs.append(dict(content=io.StringIO(result.result)))
+        if result:
+            # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
+            if result.result == "[]":
+                continue
+            # For some stations though we get a json like this:
+            #    '[{"error":"code \'blri\' not found"}]'
+            #    '[{"error":"code \'bmda2\' not found"}]'
+            elif result.result == f"""[{{"error":"code '{ioc_code}' not found"}}]""":
+                continue
+            else:
+                func_kwargs.append(dict(content=io.StringIO(result.result)))
 
     # This is a CPU heavy process, so let's use multiprocess
     logger.debug("%s: Starting conversion to pandas", ioc_code)
     results = multifutures.multiprocess(parse_json, func_kwargs, check=False)
     multifutures.check_results(results)
     dataframes = [r.result for r in results]
-    df = pd.concat(dataframes).sort_index()
-    logger.debug("%s: Finished conversion to pandas", ioc_code)
-
-    # The very last timestamp of a url might be duplicated as the first timestamp of the next url
-    # Let's remove these duplicates
-    logger.debug("%s: Total timestamps : %d", ioc_code, len(df))
-    df = df[~df.index.duplicated()]
-    logger.debug("%s: Unique timestamps: %d", ioc_code, len(df))
-
+    if dataframes:
+        df = pd.concat(dataframes).sort_index()
+        # The very last timestamp of a url might be duplicated as the first timestamp of the next url
+        # Let's remove these duplicates
+        logger.debug("%s: Total timestamps : %d", ioc_code, len(df))
+        df = df[~df.index.duplicated()]
+        logger.debug("%s: Unique timestamps: %d", ioc_code, len(df))
+        logger.debug("%s: Finished conversion to pandas", ioc_code)
+    else:
+        logger.warning("%s: No data. Creating a dummy dataframe", ioc_code)
+        df = pd.DataFrame(columns=["time", "year"])
     logger.info("%s: Finished scraping: %s - %s", ioc_code, start_date, end_date)
+    return df
+
+
     return df
