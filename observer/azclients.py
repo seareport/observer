@@ -25,7 +25,7 @@ def get_credential() -> azure.identity.ChainedTokenCredential:
     return credential
 
 
-def get_aio_credential() -> azure.identity.aio.ChainedTokenCredential:
+def get_credential_aio() -> azure.identity.aio.ChainedTokenCredential:
     credential_chain = (
         azure.identity.aio.AzureCliCredential(),
         azure.identity.aio.ManagedIdentityCredential(),
@@ -67,7 +67,7 @@ def get_storage_options(
 ) -> dict[str, T.Any]:
     settings = get_settings()
     if credential is None:
-        credential = get_aio_credential()
+        credential = get_credential_aio()
     return dict(account_name=settings.storage_account, credential=credential)
 
 

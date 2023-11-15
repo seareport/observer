@@ -4,6 +4,7 @@ import importlib.metadata
 
 import fastparquet  # noqa: F401=unused import
 
+from .azclients import get_credential_aio
 from .azclients import get_credential
 from .azclients import get_obs_client
 from .azclients import get_obs_fs
@@ -20,6 +21,7 @@ __version__ = importlib.metadata.version(__name__)
 
 
 __all__: list[str] = [
+    "get_credential_aio",
     "get_credential",
     "get_ioc_metadata",
     "get_ioc_parquet_file",
