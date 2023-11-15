@@ -126,7 +126,8 @@ def scrape_ioc_station(
 
     # This is a CPU heavy process, so let's use multiprocess
     logger.debug("%s: Starting conversion to pandas", ioc_code)
-    results = multifutures.multiprocess(parse_json, func_kwargs, check=True)
+    results = multifutures.multiprocess(parse_json, func_kwargs, check=False)
+    multifutures.check_results(results)
     dataframes = [r.result for r in results]
     df = pd.concat(dataframes).sort_index()
     logger.debug("%s: Finished conversion to pandas", ioc_code)

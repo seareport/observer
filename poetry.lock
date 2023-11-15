@@ -2325,13 +2325,13 @@ files = [
 
 [[package]]
 name = "multifutures"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "multifutures-0.1.0-py3-none-any.whl", hash = "sha256:c1ea6b247f9a6cf3b7d48490c7fdda55c56a77cca4ffd90db0e8ac32e14bfff2"},
-    {file = "multifutures-0.1.0.tar.gz", hash = "sha256:f7571413295896864eeb388f55f732a797e909d9247d7f0ea4ac997580702d26"},
+    {file = "multifutures-0.1.1-py3-none-any.whl", hash = "sha256:91b0b8b7ee90fd6de3695980f9030a14ace1ccfc12cc7d6bc7b941197a387536"},
+    {file = "multifutures-0.1.1.tar.gz", hash = "sha256:dd661b65a3ca34f2a8c2d15fbc41b8e5da0c79f9c16d3a9852f3a013f0b17f52"},
 ]
 
 [package.dependencies]
@@ -4236,4 +4236,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fa8582e7e4f863d44aba7408e7e1ebc50ba0f628e8bd9408a5503bd9839e815e"
+content-hash = "49c48ae2f38df75f1176ca13c662d9f00e7bfd55e059750ec0a2606a4ff397c2"
