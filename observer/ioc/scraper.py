@@ -71,7 +71,7 @@ def fetch_url(url, client: httpx.Client, rate_limit: multifutures.RateLimit) -> 
 
 def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())]
-    df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime)).tz_localize("utc"))
+    df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime)))
     df = df.rename(columns={"stime": "time"})
     # Occasionaly IOC contains complete garbage. E.g. duplicate timestamps on the same sensor. We should drop those.
     # https://www.ioc-sealevelmonitoring.org/service.php?query=data&timestart=2022-03-12T11:03:40&timestop=2022-04-11T09:04:26&code=acnj
