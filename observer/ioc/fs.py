@@ -29,7 +29,7 @@ def _get_station_uri(ioc_code: str) -> str:
     return uri
 
 
-def get_ioc_metadata(credential: Credential | None = None) -> pd.DataFrame:
+def get_ioc_metadata(*, credential: Credential | None = None) -> pd.DataFrame:
     """
     Return the IOC metadata from Blob
     """
@@ -76,6 +76,7 @@ def write_ioc_df(
 
 def get_ioc_parquet_file(
     ioc_code: str,
+    *,
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
 ) -> fastparquet.ParquetFile:
@@ -87,6 +88,7 @@ def get_ioc_parquet_file(
 
 def get_ioc_df(
     ioc_code: str,
+    *,
     no_years: int = 2,
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
@@ -97,6 +99,7 @@ def get_ioc_df(
 
 
 def list_ioc_stations(
+    *,
     credential: Credential | None = None,
 ) -> list[str]:
     fs = get_obs_fs(credential=credential)
