@@ -85,7 +85,7 @@ def get_ioc_parquet_file(
     return pf
 
 
-def read_ioc_df(
+def get_ioc_df(
     ioc_code: str,
     no_years: int = 2,
     credential: Credential | None = None,
