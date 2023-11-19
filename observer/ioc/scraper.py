@@ -151,5 +151,3 @@ def scrape_ioc_station(
         df = pd.DataFrame(columns=["time", "year"])
     logger.info("%s: Finished scraping: %s - %s", ioc_code, start_date, end_date)
     return df
-
-    return df

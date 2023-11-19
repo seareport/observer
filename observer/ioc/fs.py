@@ -46,7 +46,7 @@ def get_ioc_metadata(*, credential: Credential | None = None) -> pd.DataFrame:
 def write_ioc_df(
     *,
     df: pd.DataFrame,
-    ioc_code: str | None = None,
+    ioc_code: str,
     compression_level: int = 0,
     credential: Credential | None = None,
     **kwargs: dict[str, T.Any],
