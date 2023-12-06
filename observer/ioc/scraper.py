@@ -17,7 +17,7 @@ BASE_URL = "https://www.ioc-sealevelmonitoring.org/service.php?query=data&timest
 
 
 def ioc_date(ts: pd.Timestamp) -> str:
-    formatted = ts.strftime("%Y-%m-%dT%H:%m:%S")
+    formatted = ts.strftime("%Y-%m-%dT%H:%M:%S")
     return formatted
 
 
