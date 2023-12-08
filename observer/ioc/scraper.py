@@ -112,14 +112,16 @@ def scrape_ioc_station(
     logger.debug("%s:\n%s", ioc_code, "\n".join(urls))
     timeout = httpx.Timeout(timeout=10, read=30)
     with httpx.Client(timeout=timeout) as client:
-        func_kwargs = [dict(url=url, client=client, rate_limit=rate_limit) for url in urls]
+        multithread_kwargs = [
+            dict(ioc_code=ioc_code, url=url, client=client, rate_limit=rate_limit) for url in urls
+        ]
         logger.debug("%s: Starting data retrieval", ioc_code)
-        results = multifutures.multithread(fetch_url, func_kwargs, check=True)
+        results = multifutures.multithread(fetch_url, multithread_kwargs, check=True)
         logger.debug("%s: Finished data retrieval", ioc_code)
 
     # Parse the json files using pandas
     # Not all the urls contain data, so let's filter them out
-    func_kwargs = []
+    multiprocess_kwargs = []
     for result in results:
         if result:
             # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
@@ -128,14 +130,15 @@ def scrape_ioc_station(
             # For some stations though we get a json like this:
             #    '[{"error":"code \'blri\' not found"}]'
             #    '[{"error":"code \'bmda2\' not found"}]'
+            # we should ignore these, too
             elif result.result == f"""[{{"error":"code '{ioc_code}' not found"}}]""":
                 continue
             else:
-                func_kwargs.append(dict(content=io.StringIO(result.result)))
+                multiprocess_kwargs.append(dict(content=io.StringIO(result.result)))
 
     # This is a CPU heavy process, so let's use multiprocess
     logger.debug("%s: Starting conversion to pandas", ioc_code)
-    results = multifutures.multiprocess(parse_json, func_kwargs, check=False)
+    results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False)
     multifutures.check_results(results)
     dataframes = [r.result for r in results]
     if dataframes:
