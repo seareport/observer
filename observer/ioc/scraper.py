@@ -26,16 +26,15 @@ def ioc_date(ts: pd.Timestamp) -> str:
 def generate_urls(
     ioc_code: str,
     start_date: pd.Timestamp,
-    stop_date: pd.Timestamp,
+    end_date: pd.Timestamp,
 ) -> list[str]:
-    if stop_date <= start_date:
-        raise ValueError(f"'stop_date' must be after 'start_date': {stop_date} vs {start_date}")
-    duration = stop_date - start_date
+    if end_date <= start_date:
+        raise ValueError(f"'end_date' must be after 'start_date': {end_date} vs {start_date}")
+    duration = end_date - start_date
     periods = duration.days // 30 + 2
     urls = []
-    for start, stop in itertools.pairwise(
-        pd.date_range(start_date, stop_date, periods=periods, unit="us", inclusive="both")
-    ):
+    date_range = pd.date_range(start_date, end_date, periods=periods, unit="us", inclusive="both")
+    for start, stop in itertools.pairwise(date_range):
         timestart = ioc_date(start)
         timestop = ioc_date(stop)
         url = BASE_URL.format(ioc_code=ioc_code, timestart=timestart, timestop=timestop)
@@ -109,7 +108,7 @@ def scrape_ioc_station(
 
     # Fetch json files
     # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
-    urls = generate_urls(ioc_code, start_date, end_date)
+    urls = generate_urls(ioc_code=ioc_code, start_date=start_date, end_date=end_date)
     logger.debug("%s: There are %d urls", ioc_code, len(urls))
     logger.debug("%s:\n%s", ioc_code, "\n".join(urls))
     timeout = httpx.Timeout(timeout=10, read=30)
