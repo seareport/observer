@@ -8,7 +8,7 @@ import typing as T
 import httpx
 import multifutures
 import pandas as pd
-import searvey
+import searvey.ioc
 import tenacity
 
 logger = logging.getLogger(__name__)
@@ -57,13 +57,15 @@ def my_before_sleep(retry_state):
     retry=tenacity.retry_if_exception_type(httpx.TransportError),
     before_sleep=my_before_sleep,
 )
-def fetch_url(url, client: httpx.Client, rate_limit: multifutures.RateLimit) -> dict[str, T.Any]:
+def fetch_url(
+    url: str, client: httpx.Client, rate_limit: multifutures.RateLimit, ioc_code: str = ""
+) -> str:
     while rate_limit.reached(identifier="IOC"):
         multifutures.wait()
 
     try:
         response = client.get(url)
-    except Exception as exc:
+    except Exception:
         logger.warning("Failed to retrieve: %s", url)
         raise
     data = response.text
@@ -71,7 +73,7 @@ def fetch_url(url, client: httpx.Client, rate_limit: multifutures.RateLimit) -> 
 
 
 def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
-    df = df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())]
+    df = T.cast(pd.DataFrame, df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())])
     df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime.str.strip(), format=IOC_FORMAT)))
     df = df.rename(columns={"stime": "time"})
     # Occasionaly IOC contains complete garbage. E.g. duplicate timestamps on the same sensor. We should drop those.
