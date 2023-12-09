@@ -16,6 +16,15 @@ from observer.settings import get_settings
 logger = logging.getLogger(__name__)
 
 
+def _get_compression(compression_level: int) -> dict[str, T.Any]:
+    return {
+        "_default": {
+            "type": "zstd",
+            "args": {"level": compression_level},
+        },
+    }
+
+
 def _get_metadata_uri() -> str:
     settings = get_settings()
     uri = f"az://{settings.container_name}/ioc/metadata.parquet"
@@ -63,12 +72,7 @@ def write_ioc_df(
         index=True,
         storage_options=storage_options,
         engine=settings.engine,
-        compression={  # type: ignore
-            "_default": {
-                "type": "zstd",
-                "args": {"level": compression_level},
-            },
-        },
+        compression=_get_compression(compression_level=compression_level),  # type: ignore
         append=append,
         custom_metadata=custom_metadata,
     )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .fs import get_ioc_df
 from .fs import get_ioc_metadata
 from .fs import get_ioc_parquet_file
