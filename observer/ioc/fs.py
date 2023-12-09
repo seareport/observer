@@ -58,7 +58,7 @@ def write_ioc_df(
     compression_level: int = 0,
     credential: CredentialAIO | None = None,
     append: bool = False,
-    custom_metadata: dict[str, str] | None = None
+    custom_metadata: dict[str, str] | None = None,
 ) -> None:
     logger.debug("%s: Starting upload", ioc_code)
     settings = get_settings()
@@ -108,5 +108,5 @@ def list_ioc_stations(
     credential: CredentialAIO | None = None,
 ) -> list[str]:
     fs = get_obs_fs(credential=credential)
-    existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls("obs/ioc/stations")]
+    existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls(f"{get_settings().container_name}/ioc/stations")]
     return existing

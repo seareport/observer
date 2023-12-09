@@ -58,7 +58,10 @@ def my_before_sleep(retry_state: T.Any) -> None:
     before_sleep=my_before_sleep,
 )
 def fetch_url(
-    url: str, client: httpx.Client, rate_limit: multifutures.RateLimit, ioc_code: str = ""
+    url: str,
+    client: httpx.Client,
+    rate_limit: multifutures.RateLimit,
+    ioc_code: str = "",
 ) -> str:
     while rate_limit.reached(identifier="IOC"):
         multifutures.wait()
