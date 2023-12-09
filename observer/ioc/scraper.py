@@ -42,7 +42,7 @@ def generate_urls(
     return urls
 
 
-def my_before_sleep(retry_state):
+def my_before_sleep(retry_state: T.Any) -> None:
     logger.warning(
         "Retrying %s: attempt %s ended with: %s",
         retry_state.fn,
@@ -73,7 +73,7 @@ def fetch_url(
 
 
 def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
-    df = T.cast(pd.DataFrame, df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())])
+    df = df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())]
     df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime.str.strip(), format=IOC_FORMAT)))
     df = df.rename(columns={"stime": "time"})
     # Occasionaly IOC contains complete garbage. E.g. duplicate timestamps on the same sensor. We should drop those.
@@ -83,7 +83,7 @@ def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
         df = df[~duplicated_timestamps]
         logger.warning("Dropped duplicates: %d rows", duplicated_timestamps.sum())
     df = df.pivot(index="time", columns="sensor", values="slevel")
-    df._mgr.items.name = ""
+    df._mgr.items.name = ""  # type: ignore[attr-defined]
     return df
 
 
@@ -143,9 +143,9 @@ def scrape_ioc_station(
     logger.debug("%s: Starting conversion to pandas", ioc_code)
     results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False)
     multifutures.check_results(results)
-    dataframes = [r.result for r in results]
+    dataframes: list[pd.DataFrame] = [r.result for r in results]
     if dataframes:
-        df = pd.concat(dataframes).sort_index()
+        df: pd.DataFrame = pd.concat(dataframes).sort_index()
         # The very last timestamp of a url might be duplicated as the first timestamp of the next url
         # Let's remove these duplicates
         logger.debug("%s: Total timestamps : %d", ioc_code, len(df))

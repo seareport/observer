@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     storage_account: str = Field(min_length=1)
     container_name: str = Field(min_length=1)
 
-    engine: str = "fastparquet"
+    engine: T.Final = "fastparquet"
 
 
 @lru_cache

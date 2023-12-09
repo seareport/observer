@@ -55,14 +55,14 @@ def write_ioc_df(
     uri = _get_station_uri(ioc_code)
     storage_options = get_storage_options(credential=credential)
     if "year" not in df.columns:
-        df = df.assign(year=df.index.year)
-    df.to_parquet(
+        df = df.assign(year=df.index.year)  # type: ignore[attr-defined]
+    df.to_parquet(  # type: ignore[call-overload]
         uri,
         partition_cols=["year"],
         index=True,
         storage_options=storage_options,
         engine=settings.engine,
-        compression={
+        compression={  # type: ignore
             "_default": {
                 "type": "zstd",
                 "args": {"level": compression_level},
@@ -81,7 +81,7 @@ def get_ioc_parquet_file(
 ) -> fastparquet.ParquetFile:
     uri = _get_station_uri(ioc_code)
     fs = get_obs_fs(credential=credential)
-    pf = fastparquet.ParquetFile(uri, fs=fs, **kwargs)
+    pf = fastparquet.ParquetFile(uri, fs=fs, **kwargs)  # type: ignore
     return pf
 
 
@@ -93,7 +93,7 @@ def get_ioc_df(
     **kwargs: dict[str, T.Any],
 ) -> pd.DataFrame:
     pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential, **kwargs)
-    df = pf[-no_years:].to_pandas(columns=pf.columns)
+    df: pd.DataFrame = pf[-no_years:].to_pandas(columns=pf.columns)
     return df
 
 
