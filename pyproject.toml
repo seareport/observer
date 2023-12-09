@@ -23,7 +23,7 @@ azure-storage-blob = "*"
 dask = {version = "*", extras = ["complete"]}
 fastparquet = "*"
 httpx = "*"
-multifutures = ">0.1.0"
+multifutures = ">=0.1.2"
 pandas = "*"
 pydantic-settings = "*"
 scipy = ">1.8"

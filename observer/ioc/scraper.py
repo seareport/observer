@@ -103,6 +103,8 @@ def scrape_ioc_station(
     start_date: pd.Timestamp,
     end_date: pd.Timestamp,
     rate_limit: multifutures.RateLimit | None = None,
+    n_threads: int = max(10, multifutures.MAX_AVAILABLE_PROCESSES),
+    n_processes: int = min(128, multifutures.MAX_AVAILABLE_PROCESSES),
 ) -> pd.DataFrame:
     """
     Return a DataFrame with all the data of `ioc_code` from `start_date` to `end_date`
@@ -123,7 +125,7 @@ def scrape_ioc_station(
             dict(ioc_code=ioc_code, url=url, client=client, rate_limit=rate_limit) for url in urls
         ]
         logger.debug("%s: Starting data retrieval", ioc_code)
-        results = multifutures.multithread(fetch_url, multithread_kwargs, check=True)
+        results = multifutures.multithread(fetch_url, multithread_kwargs, check=True, n_workers=n_threads)
         logger.debug("%s: Finished data retrieval", ioc_code)
 
     # Parse the json files using pandas
@@ -145,7 +147,7 @@ def scrape_ioc_station(
 
     # This is a CPU heavy process, so let's use multiprocess
     logger.debug("%s: Starting conversion to pandas", ioc_code)
-    results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False)
+    results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False, n_workers=n_processes)
     multifutures.check_results(results)
     dataframes: list[pd.DataFrame] = [r.result for r in results]
     if dataframes:
