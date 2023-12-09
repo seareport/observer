@@ -33,7 +33,7 @@ def _get_metadata_uri() -> str:
 
 def _get_station_uri(ioc_code: str) -> str:
     settings = get_settings()
-    uri = f"az://{settings.container_name}/ioc/{ioc_code}.parquet"
+    uri = f"az://{settings.container_name}/ioc/stations/{ioc_code}.parquet"
     return uri
 
 
@@ -108,5 +108,5 @@ def list_ioc_stations(
     credential: CredentialAIO | None = None,
 ) -> list[str]:
     fs = get_obs_fs(credential=credential)
-    existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls("obs/ioc")]
+    existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls("obs/ioc/stations")]
     return existing
