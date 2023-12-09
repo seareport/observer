@@ -15,8 +15,11 @@ logger = logging.getLogger(__name__)
 STORAGE_ACCOUNT = "seareport"
 CONTAINER_NAME = "obs"
 
+Credential: T.TypeAlias = azure.identity.ChainedTokenCredential
+CredentialAIO: T.TypeAlias = azure.identity.aio.ChainedTokenCredential
 
-def get_credential() -> azure.identity.ChainedTokenCredential:
+
+def get_credential() -> Credential:
     credential_chain = (
         azure.identity.AzureCliCredential(),
         azure.identity.ManagedIdentityCredential(),
@@ -25,7 +28,7 @@ def get_credential() -> azure.identity.ChainedTokenCredential:
     return credential
 
 
-def get_credential_aio() -> azure.identity.aio.ChainedTokenCredential:
+def get_credential_aio() -> CredentialAIO:
     credential_chain = (
         azure.identity.aio.AzureCliCredential(),
         azure.identity.aio.ManagedIdentityCredential(),
@@ -36,7 +39,7 @@ def get_credential_aio() -> azure.identity.aio.ChainedTokenCredential:
 
 def get_blob_client(
     storage_account: str = "",
-    credential: azure.identity.ChainedTokenCredential | None = None,
+    credential: Credential | None = None,
 ) -> BlobServiceClient:
     if not storage_account:
         storage_account = get_settings().storage_account
@@ -50,7 +53,7 @@ def get_blob_client(
 def get_obs_client(
     storage_account: str = "",
     container_name: str = "",
-    credential: azure.identity.ChainedTokenCredential | None = None,
+    credential: Credential | None = None,
 ) -> ContainerClient:
     settings = get_settings()
     if not storage_account:
@@ -63,7 +66,7 @@ def get_obs_client(
 
 
 def get_storage_options(
-    credential: azure.identity.aio.ChainedTokenCredential | None = None,
+    credential: CredentialAIO | None = None,
 ) -> dict[str, T.Any]:
     settings = get_settings()
     if credential is None:
@@ -72,7 +75,7 @@ def get_storage_options(
 
 
 def get_obs_fs(
-    credential: azure.identity.aio.ChainedTokenCredential | None = None,
+    credential: CredentialAIO | None = None,
 ) -> adlfs.AzureBlobFileSystem:
     storage_options = get_storage_options(credential=credential)
     fs = adlfs.AzureBlobFileSystem(**storage_options)

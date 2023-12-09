@@ -4,6 +4,8 @@ import importlib.metadata
 
 import fastparquet  # noqa: F401=unused import
 
+from .azclients import Credential
+from .azclients import CredentialAIO
 from .azclients import get_credential
 from .azclients import get_credential_aio
 from .azclients import get_obs_client
@@ -26,6 +28,8 @@ __version__ = importlib.metadata.version(__name__)
 __all__: list[str] = [
     "__version__",
     # azclients
+    "Credential",
+    "CredentialAIO",
     "get_credential",
     "get_credential_aio",
     "get_obs_client",

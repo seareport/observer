@@ -7,12 +7,11 @@ import azure.identity.aio
 import fastparquet
 import pandas as pd
 
+from observer.azclients import CredentialAIO
 from observer.azclients import get_obs_fs
 from observer.azclients import get_storage_options
 from observer.settings import get_settings
 
-
-Credential: T.TypeAlias = azure.identity.aio.ChainedTokenCredential
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ def _get_station_uri(ioc_code: str) -> str:
     return uri
 
 
-def get_ioc_metadata(*, credential: Credential | None = None) -> pd.DataFrame:
+def get_ioc_metadata(*, credential: CredentialAIO | None = None) -> pd.DataFrame:
     """
     Return the IOC metadata from Blob
     """
@@ -48,7 +47,7 @@ def write_ioc_df(
     df: pd.DataFrame,
     ioc_code: str,
     compression_level: int = 0,
-    credential: Credential | None = None,
+    credential: CredentialAIO | None = None,
     **kwargs: dict[str, T.Any],
 ) -> None:
     logger.debug("%s: Starting upload", ioc_code)
@@ -77,7 +76,7 @@ def write_ioc_df(
 def get_ioc_parquet_file(
     ioc_code: str,
     *,
-    credential: Credential | None = None,
+    credential: CredentialAIO | None = None,
     **kwargs: dict[str, T.Any],
 ) -> fastparquet.ParquetFile:
     uri = _get_station_uri(ioc_code)
@@ -90,7 +89,7 @@ def get_ioc_df(
     ioc_code: str,
     *,
     no_years: int = 2,
-    credential: Credential | None = None,
+    credential: CredentialAIO | None = None,
     **kwargs: dict[str, T.Any],
 ) -> pd.DataFrame:
     pf = get_ioc_parquet_file(ioc_code=ioc_code, credential=credential, **kwargs)
@@ -100,7 +99,7 @@ def get_ioc_df(
 
 def list_ioc_stations(
     *,
-    credential: Credential | None = None,
+    credential: CredentialAIO | None = None,
 ) -> list[str]:
     fs = get_obs_fs(credential=credential)
     existing = [parquet.split("/")[-1].split(".")[0] for parquet in fs.ls("obs/ioc")]
