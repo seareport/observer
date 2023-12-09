@@ -48,7 +48,8 @@ def write_ioc_df(
     ioc_code: str,
     compression_level: int = 0,
     credential: CredentialAIO | None = None,
-    **kwargs: dict[str, T.Any],
+    append: bool = False,
+    custom_metadata: dict[str, str] | None = None
 ) -> None:
     logger.debug("%s: Starting upload", ioc_code)
     settings = get_settings()
@@ -68,7 +69,8 @@ def write_ioc_df(
                 "args": {"level": compression_level},
             },
         },
-        **kwargs,
+        append=append,
+        custom_metadata=custom_metadata,
     )
     logger.info("%s: Finished upload", ioc_code)
 
