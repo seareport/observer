@@ -5,6 +5,7 @@ import typing as T
 
 import adlfs
 import azure.identity.aio
+from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob import ContainerClient
 
@@ -35,6 +36,18 @@ def get_credential_aio() -> CredentialAIO:
     )
     credential = azure.identity.aio.ChainedTokenCredential(*credential_chain)
     return credential
+
+
+def get_keyvault_client(
+    keyvault_url: str | None = None,
+    credential: Credential | None = None,
+) -> SecretClient:
+    if not keyvault_url:
+        keyvault_url = get_settings().keyvault_url
+    if credential is None:
+        credential = get_credential()
+    client = SecretClient(vault_url=keyvault_url, credential=credential)
+    return client
 
 
 def get_blob_client(
