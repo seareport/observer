@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.ioc-sealevelmonitoring.org/service.php?query=data&timestart={timestart}&timestop={timestop}&code={ioc_code}"
 
-IOC_FORMAT = "%Y-%m-%dT%H:%M:%S"
+IOC_URL_TS_FORMAT = "%Y-%m-%dT%H:%M:%S"
+IOC_JSON_TS_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def ioc_date(ts: pd.Timestamp) -> str:
-    formatted = ts.strftime(IOC_FORMAT)
+    formatted = ts.strftime(IOC_URL_TS_FORMAT)
     return formatted
 
 
@@ -77,7 +78,7 @@ def fetch_url(
 
 def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df.sensor.isin(searvey.ioc.IOC_STATION_DATA_COLUMNS.values())]
-    df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime.str.strip(), format=IOC_FORMAT)))
+    df = df.assign(stime=pd.DatetimeIndex(pd.to_datetime(df.stime.str.strip(), format=IOC_JSON_TS_FORMAT)))
     df = df.rename(columns={"stime": "time"})
     # Occasionaly IOC contains complete garbage. E.g. duplicate timestamps on the same sensor. We should drop those.
     # https://www.ioc-sealevelmonitoring.org/service.php?query=data&timestart=2022-03-12T11:03:40&timestop=2022-04-11T09:04:26&code=acnj
