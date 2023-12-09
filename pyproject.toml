@@ -37,6 +37,8 @@ pytest = ">=7.0"
 pytest-cov = ">=3"
 mypy = "*"
 ipykernel = "*"
+ipdb = "*"
+pandas-stubs = "*"
 
 [tool.black]
 line-length = 108
