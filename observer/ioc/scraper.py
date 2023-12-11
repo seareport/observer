@@ -86,7 +86,7 @@ def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     duplicated_timestamps = df[["time", "sensor"]].duplicated()
     if duplicated_timestamps.sum() > 0:
         df = df[~duplicated_timestamps]
-        logger.warning("Dropped duplicates: %d rows", duplicated_timestamps.sum())
+        logger.warning("%s: Dropped duplicates: %d rows", df.attrs["ioc_code"], duplicated_timestamps.sum())
     df = df.pivot(index="time", columns="sensor", values="slevel")
     df._mgr.items.name = ""  # type: ignore[attr-defined]
     return df
@@ -159,11 +159,19 @@ def scrape_ioc(
     for r in results:
         df_groups[r.kwargs["ioc_code"]].append(r.result)
     dataframes: dict[str, pd.DataFrame] = {}
-    for ioc_code, df_group in df_groups.items():
-        df = pd.concat(df_group)
-        df = df.sort_index()
-        df = df[~df.index.duplicated()]
+    for ioc_code in ioc_codes:
+        if ioc_code in df_groups:
+            df_group = df_groups[ioc_code]
+            df = pd.concat(df_group)
+            df = df.sort_index()
+            logger.debug("%s: Total timestamps : %d", ioc_code, len(df))
+            df = df[~df.index.duplicated()]
+            logger.debug("%s: Unique timestamps: %d", ioc_code, len(df))
+        else:
+            logger.warning("%s: No data. Creating a dummy dataframe", ioc_code)
+            df = pd.DataFrame(columns=["time"], dtype='datetime64[ns]').set_index("time")
         dataframes[ioc_code] = df
+        logger.debug("%s: Finished conversion to pandas", ioc_code)
     return dataframes
 
 
