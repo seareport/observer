@@ -100,69 +100,92 @@ def parse_json(content: str, ioc_code: str) -> pd.DataFrame:
     return df
 
 
-def scrape_ioc(
-    *,
-    ioc_codes: list[str],
-    start_date: pd.Timestamp,
-    end_date: pd.Timestamp,
-    rate_limit: multifutures.RateLimit | None = None,
-    n_threads: int = 5,
-    n_processes: int = multifutures.MAX_AVAILABLE_PROCESSES,
-    http_client: httpx.Client | None = None,
-) -> dict[str, pd.DataFrame]:
-    logger.info("Starting scraping: %s - %s", start_date, end_date)
-
+def _resolve_rate_limit(rate_limit: multifutures.RateLimit | None = None) -> multifutures.RateLimit:
     if rate_limit is None:
         rate_limit = multifutures.RateLimit(rate_limit=limits.parse("5/second"))
+    return rate_limit
+
+
+def _resolve_http_client(http_client: httpx.Client | None = None) -> httpx.Client:
     if http_client is None:
         timeout = httpx.Timeout(timeout=10, read=30)
         http_client = httpx.Client(timeout=timeout)
+    return http_client
 
-    # Fetch json files
-    # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
-    with http_client:
-        multithread_kwargs = []
-        for ioc_code in ioc_codes:
-            for url in generate_urls(ioc_code=ioc_code, start_date=start_date, end_date=end_date):
-                multithread_kwargs.append(
-                    dict(
-                        ioc_code=ioc_code,
-                        url=url,
-                        client=http_client,
-                        rate_limit=rate_limit,
-                    )
+
+def retrieve_ioc_data(
+    ioc_codes: list[str],
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    rate_limit: multifutures.RateLimit,
+    http_client: httpx.Client,
+    n_threads: int,
+) -> list[multifutures.FutureResult]:
+    kwargs = []
+    for ioc_code in ioc_codes:
+        for url in generate_urls(ioc_code=ioc_code, start_date=start_date, end_date=end_date):
+            kwargs.append(
+                dict(
+                    ioc_code=ioc_code,
+                    url=url,
+                    client=http_client,
+                    rate_limit=rate_limit,
                 )
+            )
+    with http_client:
         logger.debug("Starting data retrieval")
-        results = multifutures.multithread(fetch_url, multithread_kwargs, check=True, n_workers=n_threads)
+        results = multifutures.multithread(
+            func=fetch_url,
+            func_kwargs=kwargs,
+            check=False,
+            n_workers=n_threads
+        )
         logger.debug("Finished data retrieval")
+    multifutures.check_results(results)
+    return results
 
+
+def parse_ioc_responses(
+    ioc_responses: list[multifutures.FutureResult],
+    n_processes: int,
+) -> list[multifutures.FutureResult]:
     # Parse the json files using pandas
     # This is a CPU heavy process, so let's use multiprocess
     # Not all the urls contain data, so let's filter them out
-    multiprocess_kwargs = []
-    for result in results:
-        ioc_code = result.kwargs["ioc_code"]
-        if result:
-            # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
-            if result.result == "[]":
-                continue
-            # For some stations though we get a json like this:
-            #    '[{"error":"code \'blri\' not found"}]'
-            #    '[{"error":"code \'bmda2\' not found"}]'
-            # we should ignore these, too
-            elif result.result == f"""[{{"error":"code '{ioc_code}' not found"}}]""":
-                continue
-            else:
-                multiprocess_kwargs.append(dict(ioc_code=ioc_code, content=io.StringIO(result.result)))
+    kwargs = []
+    for result in ioc_responses:
+        ioc_code = result.kwargs["ioc_code"]  # type: ignore[index]
+        # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
+        if result.result == "[]":
+            continue
+        # For some stations though we get a json like this:
+        #    '[{"error":"code \'blri\' not found"}]'
+        #    '[{"error":"code \'bmda2\' not found"}]'
+        # we should ignore these, too
+        elif result.result == f"""[{{"error":"code '{ioc_code}' not found"}}]""":
+            continue
+        # And if the IOC code does not match some pattern (5 letters?) then we get this error
+        elif result.result == '[{"error":"Incorrect code"}]':
+            continue
+        else:
+            kwargs.append(dict(ioc_code=ioc_code, content=io.StringIO(result.result)))
     logger.debug("Starting JSON parsing")
-    results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False, n_workers=n_processes)
+    results = multifutures.multiprocess(parse_json, func_kwargs=kwargs, check=False, n_workers=n_processes)
     multifutures.check_results(results)
     logger.debug("Finished JSON parsing")
+    return results
 
-    # OK, now we have a list of dataframes. We need to group them per ioc_code, concatenate them and remove duplicates
+
+def group_results(
+    ioc_codes: list[str],
+    parsed_responses: list[multifutures.FutureResult],
+) -> dict[str, pd.DataFrame]:
+    # Group per IOC code
     df_groups = collections.defaultdict(list)
-    for r in results:
-        df_groups[r.kwargs["ioc_code"]].append(r.result)
+    for item in parsed_responses:
+        df_groups[item.kwargs["ioc_code"]].append(item.result)  # type: ignore[index]
+
+    # Concatenate dataframes and remove duplicates
     dataframes: dict[str, pd.DataFrame] = {}
     for ioc_code in ioc_codes:
         if ioc_code in df_groups:
@@ -177,6 +200,44 @@ def scrape_ioc(
             df = pd.DataFrame(columns=["time"], dtype='datetime64[ns]').set_index("time")
         dataframes[ioc_code] = df
         logger.debug("%s: Finished conversion to pandas", ioc_code)
+
+    return dataframes
+
+
+def scrape_ioc(
+    *,
+    ioc_codes: list[str],
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    rate_limit: multifutures.RateLimit | None = None,
+    http_client: httpx.Client | None = None,
+    n_threads: int = 5,
+    n_processes: int = multifutures.MAX_AVAILABLE_PROCESSES,
+) -> dict[str, pd.DataFrame]:
+    logger.info("Starting scraping: %s - %s", start_date, end_date)
+    rate_limit = _resolve_rate_limit(rate_limit=rate_limit)
+    http_client = _resolve_http_client(http_client=http_client)
+
+    # Fetch json files from the IOC website
+    # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
+    ioc_responses: list[multifutures.FutureResult] = retrieve_ioc_data(
+        ioc_codes=ioc_codes,
+        start_date=start_date,
+        end_date=end_date,
+        rate_limit=rate_limit,
+        http_client=http_client,
+        n_threads=n_threads,
+    )
+
+    # Parse the json files using pandas
+    # This is a CPU heavy process, so we are using multiprocessing here
+    parsed_responses: list[multifutures.FutureResult] = parse_ioc_responses(
+        ioc_responses=ioc_responses,
+        n_processes=n_processes
+    )
+
+    # OK, now we have a list of dataframes. We need to group them per ioc_code, concatenate them and remove duplicates
+    dataframes = group_results(ioc_codes=ioc_codes, parsed_responses=parsed_responses)
     return dataframes
 
 
@@ -186,63 +247,19 @@ def scrape_ioc_station(
     start_date: pd.Timestamp,
     end_date: pd.Timestamp,
     rate_limit: multifutures.RateLimit | None = None,
-    n_threads: int = max(10, multifutures.MAX_AVAILABLE_PROCESSES),
-    n_processes: int = min(128, multifutures.MAX_AVAILABLE_PROCESSES),
+    http_client: httpx.Client | None = None,
+    n_threads: int = 5,
+    n_processes: int = multifutures.MAX_AVAILABLE_PROCESSES,
 ) -> pd.DataFrame:
-    """
-    Return a DataFrame with all the data of `ioc_code` from `start_date` to `end_date`
-
-    """
     logger.info("%s: Starting scraping: %s - %s", ioc_code, start_date, end_date)
-    if rate_limit is None:
-        rate_limit = multifutures.RateLimit()
-
-    # Fetch json files
-    # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
-    urls = generate_urls(ioc_code=ioc_code, start_date=start_date, end_date=end_date)
-    logger.debug("%s: There are %d urls", ioc_code, len(urls))
-    logger.debug("%s:\n%s", ioc_code, "\n".join(urls))
-    timeout = httpx.Timeout(timeout=10, read=30)
-    with httpx.Client(timeout=timeout) as client:
-        multithread_kwargs = [
-            dict(ioc_code=ioc_code, url=url, client=client, rate_limit=rate_limit) for url in urls
-        ]
-        logger.debug("%s: Starting data retrieval", ioc_code)
-        results = multifutures.multithread(fetch_url, multithread_kwargs, check=True, n_workers=n_threads)
-        logger.debug("%s: Finished data retrieval", ioc_code)
-
-    # Parse the json files using pandas
-    # Not all the urls contain data, so let's filter them out
-    multiprocess_kwargs = []
-    for result in results:
-        if result:
-            # if a url doesn't have any data instead of a 404, it returns an empty list `[]`
-            if result.result == "[]":
-                continue
-            # For some stations though we get a json like this:
-            #    '[{"error":"code \'blri\' not found"}]'
-            #    '[{"error":"code \'bmda2\' not found"}]'
-            # we should ignore these, too
-            elif result.result == f"""[{{"error":"code '{ioc_code}' not found"}}]""":
-                continue
-            else:
-                multiprocess_kwargs.append(dict(ioc_code=ioc_code, content=io.StringIO(result.result)))
-
-    # This is a CPU heavy process, so let's use multiprocess
-    logger.debug("%s: Starting conversion to pandas", ioc_code)
-    results = multifutures.multiprocess(parse_json, multiprocess_kwargs, check=False, n_workers=n_processes)
-    multifutures.check_results(results)
-    dataframes: list[pd.DataFrame] = [r.result for r in results]
-    if dataframes:
-        df: pd.DataFrame = pd.concat(dataframes).sort_index()
-        # The very last timestamp of a url might be duplicated as the first timestamp of the next url
-        # Let's remove these duplicates
-        logger.debug("%s: Total timestamps : %d", ioc_code, len(df))
-        df = df[~df.index.duplicated()]
-        logger.debug("%s: Unique timestamps: %d", ioc_code, len(df))
-        logger.debug("%s: Finished conversion to pandas", ioc_code)
-    else:
-        logger.warning("%s: No data. Creating a dummy dataframe", ioc_code)
-        df = pd.DataFrame(columns=["time", "year"])
+    df = scrape_ioc(
+        ioc_codes=[ioc_code],
+        start_date=start_date,
+        end_date=end_date,
+        rate_limit=rate_limit,
+        http_client=http_client,
+        n_threads=n_threads,
+        n_processes=n_processes,
+    )[ioc_code]
     logger.info("%s: Finished scraping: %s - %s", ioc_code, start_date, end_date)
     return df

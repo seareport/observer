@@ -15,6 +15,7 @@ from .ioc import get_ioc_df
 from .ioc import get_ioc_metadata
 from .ioc import get_ioc_parquet_file
 from .ioc import list_ioc_stations
+from .ioc import scrape_ioc
 from .ioc import scrape_ioc_station
 from .ioc import write_ioc_df
 from .notify import notify_error
@@ -40,6 +41,7 @@ __all__: list[str] = [
     "get_ioc_metadata",
     "get_ioc_parquet_file",
     "list_ioc_stations",
+    "scrape_ioc",
     "scrape_ioc_station",
     "write_ioc_df",
     # notify

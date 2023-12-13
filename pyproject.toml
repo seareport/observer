@@ -16,30 +16,32 @@ build-backend = "poetry_dynamic_versioning.backend"
 obs = "observer.cli:app"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.9, <4"
 adlfs = "*"
 azure-identity = "*"
+azure-keyvault = "*"
 azure-storage-blob = "*"
 dask = {version = "*", extras = ["complete"]}
 fastparquet = "*"
 httpx = "*"
-multifutures = ">=0.1.2"
+multifutures = "*"
 pandas = "*"
 pydantic-settings = "*"
-scipy = ">1.8"
 searvey = "*"
 tenacity = "*"
 typer = {version = "*", extras = ["all"]}
 xarray = {version = "*", extras = ["accel", "parallel", "io"]}
-azure-keyvault = "*"
 
 [tool.poetry.group.dev.dependencies]
+covdefaults = "*"
+coverage = {version = "*", extras = ["toml"]}
+devtools = "*"
+ipdb = "*"
+ipykernel = "*"
+mypy = "*"
+pandas-stubs = "*"
 pytest = ">=7.0"
 pytest-cov = ">=3"
-mypy = "*"
-ipykernel = "*"
-ipdb = "*"
-pandas-stubs = "*"
 
 [tool.black]
 line-length = 108

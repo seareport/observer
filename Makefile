@@ -19,6 +19,10 @@ mypy:
 test:
 	python -m pytest -vlx
 
+cov:
+	coverage erase
+	python -WError -m pytest --cov=observer --cov-report term-missing --durations=10
+
 deps:
 	pre-commit run poetry-lock -a
 	pre-commit run poetry-check -a
