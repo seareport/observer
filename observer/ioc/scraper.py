@@ -7,6 +7,7 @@ import logging
 import typing as T
 
 import httpx
+import limits
 import multifutures
 import pandas as pd
 import searvey.ioc
@@ -105,17 +106,21 @@ def scrape_ioc(
     start_date: pd.Timestamp,
     end_date: pd.Timestamp,
     rate_limit: multifutures.RateLimit | None = None,
-    n_threads: int = max(10, multifutures.MAX_AVAILABLE_PROCESSES),
-    n_processes: int = min(128, multifutures.MAX_AVAILABLE_PROCESSES),
+    n_threads: int = 5,
+    n_processes: int = multifutures.MAX_AVAILABLE_PROCESSES,
+    http_client: httpx.Client | None = None,
 ) -> dict[str, pd.DataFrame]:
     logger.info("Starting scraping: %s - %s", start_date, end_date)
+
     if rate_limit is None:
-        rate_limit = multifutures.RateLimit()
+        rate_limit = multifutures.RateLimit(rate_limit=limits.parse("5/second"))
+    if http_client is None:
+        timeout = httpx.Timeout(timeout=10, read=30)
+        http_client = httpx.Client(timeout=timeout)
 
     # Fetch json files
     # We use multithreading in order to be able to use RateLimit + to take advantage of higher performance
-    timeout = httpx.Timeout(timeout=10, read=30)
-    with httpx.Client(timeout=timeout) as client:
+    with http_client:
         multithread_kwargs = []
         for ioc_code in ioc_codes:
             for url in generate_urls(ioc_code=ioc_code, start_date=start_date, end_date=end_date):
@@ -123,7 +128,7 @@ def scrape_ioc(
                     dict(
                         ioc_code=ioc_code,
                         url=url,
-                        client=client,
+                        client=http_client,
                         rate_limit=rate_limit,
                     )
                 )
