@@ -52,14 +52,14 @@ repos:
       - id: "add-trailing-comma"
 
   - repo: "https://github.com/astral-sh/ruff-pre-commit"
-    rev: "v0.1.7"
+    rev: "v0.3.4"
     hooks:
       - id: "ruff"
         args: ["--show-fixes"]
       - id: "ruff-format"
 
   - repo: "https://github.com/python-poetry/poetry"
-    rev: "1.7.0"
+    rev: "1.8.0"
     hooks:
       - id: "poetry-check"
         name: "poetry check"
